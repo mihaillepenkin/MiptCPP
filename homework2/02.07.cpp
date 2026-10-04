@@ -27,7 +27,7 @@ double calculate_standard_deviation(double * array, int length, double avarage_s
     return standard_deviation;
 }
 
-int append(double * & array, double new_value, int length, int capacity) {
+void append(double * & array, double new_value, int length, int & capacity) {
     if (length > capacity - 1) {
         capacity *= 2;
         double * array_tmp = new double[capacity];
@@ -38,7 +38,6 @@ int append(double * & array, double new_value, int length, int capacity) {
         array = array_tmp;
     }
     array[length] = new_value;
-    return capacity;
 }
 
 int main() {
@@ -54,7 +53,7 @@ int main() {
 
 
     while (std::cin >> tmp) {
-        capacity = append(array, tmp, n, capacity);
+        append(array, tmp, n, capacity);
         avarage_sum += array[n++];
     }
 
