@@ -1,0 +1,61 @@
+#include<iostream>
+#include<utility>
+#include<cmath>
+#include<print>
+
+void bubble_sort(double* array, int length) {
+    for (auto i = 0; i < length; ++i) {
+         for (auto j = 0; j < length - i - 1; ++j) {
+            if (array[j] > array[j + 1]) {
+                std::swap(array[j], array[j + 1]);
+            }
+        }
+    }
+}
+
+double calculate_standard_deviation(double* array, int length, double avarage_sum) {
+    if (length <= 1) {
+        return 0;
+    }     
+    double standard_deviation = 0;
+    for (auto i = 0; i < length; ++i) {
+        standard_deviation += (array[i] - avarage_sum) * (array[i] - avarage_sum);
+    }
+    standard_deviation /= length - 1;
+    standard_deviation = std::sqrt(standard_deviation);
+
+    return standard_deviation;
+}
+
+int main() {
+    int n = 0;
+    std::cin >> n;
+    if (n == 0) {
+        std::print("length of array must be not 0\n");
+        return 1;
+    }
+    double avarage_sum = 0;
+    double median = 0;
+    double min = 0;
+    double max = 0;
+    double standard_deviation = 0;
+    double* array = new double[n]();
+    for (auto i = 0; i < n; ++i) {
+        std::cin >> array[i];
+        avarage_sum += array[i];
+    }
+    avarage_sum /= n;
+    standard_deviation = calculate_standard_deviation(array, n, avarage_sum);
+    bubble_sort(array, n);
+    if (n % 2 == 0) {
+        median = (array[n / 2 - 1] + array[n / 2]) / 2;
+    } else {
+        median = array[n / 2];
+    }
+    min = array[0];
+    max = array[n - 1];
+
+    delete[] array;
+
+    std::print("Max value - {}, Min Value - {}, Median - {}, Average sum - {}, Standard deviation - {}\n", max, min, median, avarage_sum, standard_deviation);
+}
