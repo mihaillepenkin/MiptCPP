@@ -25,6 +25,7 @@ int main() {
         }
         default: {
             std::print("other\n");
+            break;
         }    
     }
 }

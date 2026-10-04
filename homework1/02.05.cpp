@@ -1,9 +1,9 @@
 #include<print>
 #include<cmath>
 
-const double epsilon = 10e-6;
 
 int main() {
+    const double epsilon = 10e-6;
     double e = 0;
     double pi = 0;
 
