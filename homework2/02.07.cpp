@@ -34,8 +34,9 @@ void append(double * & array, double new_value, int length, int & capacity) {
         for (auto i = 0; i < length; ++i) {
             array_tmp[i] = array[i];
         }
-        delete[] array;
-        array = array_tmp;
+
+        delete[] std::exchange(array, array_tmp);
+
     }
     array[length] = new_value;
 }

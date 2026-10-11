@@ -22,7 +22,7 @@ std::size_t calculate_kollatz_length(unsigned long long int start, std::vector<s
 }
 
 int main() {
-    std::vector<std::size_t> cache(101);
+    std::vector<std::size_t> cache(101, 0);
 
     auto max_length = 0uz;
     auto start_of_max_length = 0;
