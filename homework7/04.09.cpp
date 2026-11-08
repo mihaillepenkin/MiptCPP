@@ -1,0 +1,294 @@
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// chapter : Generic Programming
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// content : Type Lists
+//
+// content : Metafunction std::conditional
+//
+// content : Enumeration std::byte
+//
+// content : Base Class std::integral_constant
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include <cstddef>
+#include <type_traits>
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename ... Ts > struct Deque {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > struct Size {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename ... Ts > struct Size < Deque < Ts ... > >
+{
+    constexpr static auto value = sizeof...(Ts);
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > constexpr auto size_v = Size < D > ::value;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > constexpr auto empty_v = size_v < D > == 0;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > struct Front {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T, typename ... Ts > struct Front < Deque < T, Ts ... > >
+{
+    using type = T;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > using front = typename Front < D > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T > struct Push_Front {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T, typename ... Ts > struct Push_Front < Deque < Ts ... > , T >
+{
+    using type = Deque < T, Ts ... > ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T > using push_front = typename Push_Front < D, T > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > struct Pop_Front {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T, typename ... Ts > struct Pop_Front < Deque < T, Ts ... > >
+{
+    using type = Deque < Ts ... > ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > using pop_front = typename Pop_Front < D > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > struct Back {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T > struct Back < Deque < T > >
+{
+    using type = T;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T, typename ... Ts > struct Back < Deque < T, Ts ... > >
+{
+    using type = typename Back < Deque < Ts ... > > ::type;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > using back = typename Back < D > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T, bool C = empty_v < D > > struct Push_Back {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T > struct Push_Back < D, T, false >
+{
+    using type = push_front < typename Push_Back < pop_front < D > , T > ::type, front < D > > ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T > struct Push_Back < D, T, true >
+{
+    using type = push_front < D, T > ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T > using push_back = typename Push_Back < D, T > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > struct Pop_Back {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T > struct Pop_Back < Deque < T > >
+{
+    using type = Deque <> ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename T, typename ... Ts > struct Pop_Back < Deque < T, Ts ... > >
+{
+    using type = push_front < typename Pop_Back < Deque < Ts ... > > ::type, T > ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > using pop_back = typename Pop_Back < D > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, std::size_t I > class At : public At < pop_front < D > , I - 1 > {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > class At < D, 0 > : public Front < D > {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, std::size_t I > using at = typename At < D, I > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, bool C = empty_v < D > > class Max_Element {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > class Max_Element < D, false >
+{
+private :
+
+    using current_t = front < D > ;
+
+    using max_t = typename Max_Element < pop_front < D > > ::type;
+
+public :
+
+    using type = std::conditional_t < sizeof(current_t) >= sizeof(max_t), current_t, max_t > ;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > class Max_Element < D, true >
+{
+public :
+
+    using type = std::byte;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D > using max_element = typename Max_Element < D > ::type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T, std::size_t I = 0, bool C = empty_v < D > > class Find {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template
+<
+    typename D, typename T, std::size_t I
+>
+class Find < D, T, I, false > : public std::conditional_t
+<
+    std::is_same_v < front < D > , T > ,
+
+    std::integral_constant < std::size_t, I > , Find < pop_front < D > , T, I + 1 >
+
+> {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T, std::size_t I > class Find < D, T, I, true > {};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T > constexpr auto find_v = Find < D, T > ::value;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+template < typename D, typename T, bool C = empty_v < D > > class Has {};
+
+template <typename D, typename T> class Has <D, T, false> : public std::conditional_t <std::is_same_v <front <D>, T>, std::true_type, Has <pop_front <D>, T>> {};
+
+template <typename D, typename T> class Has <D, T, true> : public std::false_type {};
+
+template < typename D, typename T > constexpr bool has_v = Has < D, T > ::value;
+
+int main()
+{
+    static_assert(size_v < Deque <     > > == 0 && empty_v < Deque <     > > == 1);
+
+    static_assert(size_v < Deque < int > > == 1 && empty_v < Deque < int > > == 0);
+
+//  -------------------------------------------------------------------------------------------
+
+    static_assert(std::is_same_v <      front < Deque < int >       > ,         int        > );
+
+    static_assert(std::is_same_v < push_front < Deque < int > , int > , Deque < int, int > > );
+
+    static_assert(std::is_same_v <  pop_front < Deque < int >       > , Deque <          > > );
+
+//  -------------------------------------------------------------------------------------------
+
+    static_assert(std::is_same_v <       back < Deque < int >       > ,              int   > );
+
+    static_assert(std::is_same_v <  push_back < Deque < int > , int > , Deque < int, int > > );
+
+    static_assert(std::is_same_v <   pop_back < Deque < int >       > , Deque <          > > );
+
+//  -------------------------------------------------------------------------------------------
+
+    static_assert(std::is_same_v < at < Deque < int, int > , 0 > , int > );
+
+    static_assert(std::is_same_v < at < Deque < int, int > , 1 > , int > );
+
+//  -------------------------------------------------------------------------------------------
+
+    static_assert(std::is_same_v < max_element < Deque < int, double > > , double > );
+
+//  -------------------------------------------------------------------------------------------
+
+    static_assert(find_v < Deque < int > , int > == 0);
+
+    //  -------------------------------------------------------------------------------------------
+//  Проверки для Has (наличие типа)
+//  -------------------------------------------------------------------------------------------
+
+    // Тип присутствует (в начале, середине и конце)
+    static_assert(has_v < Deque < int, double, char > , int    > == true);
+    static_assert(has_v < Deque < int, double, char > , double > == true);
+    static_assert(has_v < Deque < int, double, char > , char   > == true);
+
+    // Тип отсутствует
+    static_assert(has_v < Deque < int, double, char > , float  > == false);
+
+    // Поиск в пустой очереди всегда должен возвращать false
+    static_assert(has_v < Deque < > , int > == false);
+
+//  -------------------------------------------------------------------------------------------
+//  Проверка на дубликаты (опционально, но полезно)
+//  -------------------------------------------------------------------------------------------
+
+    // Has должен быть true, если тип встречается хотя бы раз
+    static_assert(has_v < Deque < int, double, int > , int > == true);
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
